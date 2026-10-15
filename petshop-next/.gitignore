@@ -1,0 +1,11 @@
+node_modules/
+.next/
+.next-dev/
+.env*
+!.env.example
+*.log
+.vercel/
+.audit-php-sessions/
+.audit-browser-profile-*/
+.audit-auth-credentials.json
+.audit-pet-*

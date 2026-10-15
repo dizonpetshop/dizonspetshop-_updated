@@ -1,0 +1,48 @@
+{
+  "name": "dizons-petshop-next",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "predev": "prisma generate",
+    "dev": "next dev",
+    "prebuild": "prisma generate",
+    "build": "next build",
+    "start": "next start",
+    "lint": "tsc --noEmit",
+    "db:check": "node --env-file=.env.local scripts/check-database.mjs",
+    "db:upgrade": "node --env-file=.env.local scripts/ensure-mysql-operations.mjs",
+    "db:loyalty": "node --env-file=.env.local scripts/ensure-loyalty-policy.mjs",
+    "db:attendance": "node --env-file=.env.local scripts/ensure-attendance.mjs",
+    "db:product-expiry": "node --env-file=.env.local scripts/ensure-product-expiry.mjs",
+    "db:messaging": "node --env-file=.env.local scripts/ensure-messaging.mjs",
+    "db:reviews": "node --env-file=.env.local scripts/ensure-reviews.mjs",
+    "db:google": "node --env-file=.env.local scripts/ensure-google-auth.mjs",
+    "db:checkout": "node --env-file=.env.local scripts/ensure-reservation-checkout.mjs",
+    "db:receipts": "node --env-file=.env.local scripts/ensure-reservation-receipts.mjs",
+    "reviews:screen-pending": "node --env-file=.env.local scripts/screen-pending-reviews.mjs",
+    "make-admin": "node --env-file=.env.local scripts/make-admin.mjs",
+    "test:helpers": "node scripts/test-helpers.mjs",
+    "test:system": "node --env-file=.env.local scripts/test-system.mjs",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.16.0",
+    "bcryptjs": "^3.0.2",
+    "jose": "^6.1.0",
+    "next": "^16.0.0",
+    "nodemailer": "^10.0.10",
+    "pdfkit": "^0.20.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sharp": "^0.35.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/nodemailer": "^8.0.1",
+    "@types/pdfkit": "^0.17.6",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "prisma": "^6.16.0",
+    "typescript": "^5.7.0"
+  }
+}

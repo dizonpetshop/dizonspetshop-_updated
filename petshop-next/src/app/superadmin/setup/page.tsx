@@ -1,0 +1,7 @@
+import Link from "next/link";
+import PasswordInput from "@/components/PasswordInput";
+
+export default async function SuperAdminSetup({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const { error } = await searchParams;
+  return <main className="legacyAuthPage adminLegacyAuth"><section className="legacyAuthShell"><div className="legacyLogoPane"><img src="/assets/dizons-logo.jpg" alt="Dizon's Pet Grooming" /></div><div className="legacyLoginPane"><div className="legacyLoginCard"><div className="legacyAuthHeading"><small>ONE-TIME SETUP</small><h1>CREATE<br />SUPER ADMIN</h1><p>Promote one existing active administrator. Setup closes after the first Super Admin is created.</p></div>{error && <div className="authError" role="alert">{error === "database-config" ? "The database is not configured. Contact the site administrator." : error === "unavailable" ? "Setup is temporarily unavailable. Please try again later." : "The administrator credentials are invalid, or setup is already complete."}</div>}<form action="/api/auth/superadmin-setup" method="post" className="legacyAuthForm"><label>EXISTING ADMIN EMAIL<input type="email" name="email" autoComplete="username" required /></label><label>ADMIN PASSWORD<PasswordInput /></label><button type="submit">Create Super Admin</button></form><Link href="/superadmin/login" className="legacyBackLink">← Super Admin login</Link></div></div></section></main>;
+}

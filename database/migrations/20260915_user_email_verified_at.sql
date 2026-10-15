@@ -1,0 +1,4 @@
+USE petshop_db;
+
+ALTER TABLE users
+    ADD COLUMN email_verified_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER email;

@@ -1,0 +1,9 @@
+{
+  "buildCommand": "npm run build",
+  "crons": [
+    {
+      "path": "/api/cron/grooming-reminders",
+      "schedule": "0 1 * * *"
+    }
+  ]
+}

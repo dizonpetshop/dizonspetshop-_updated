@@ -1,0 +1,20 @@
+// Descriptions based on the labels visible in the original pictures folder.
+export const pictureDescriptions = {
+  'Abalone Beef Cat Food.jpg': 'Beef-flavored cat treat sticks in individually wrapped portions.',
+  'Akika Herbal Pet Shop.jpg': 'Akiika herbal pet soap bars for your pet bathing routine.',
+  'AOZI  Lamb.webp': 'Aozi lamb-flavored canned dog food in a 430g can.',
+  'Aozi adult  gray.jpg': 'Aozi dry cat food formulated for adult cats.',
+  'Aozi Adult.jpg': 'Aozi dry dog food formulated for adult dogs.',
+  'Aozi Salmon and Liver.jpg': 'Aozi canned dog food with salmon and liver.',
+  'Chicken Cat Strips.jpg': 'Chicken-flavored cat treat strips with egg yolk, in a 16g serving.',
+  'Dry Cleaning Powder.jpg': 'Petsup mint-scented dry cleaning powder for pet grooming.',
+  'madre de cacao cucumber lemon.jpg': 'Wiggle Waggle Madre de Cacao pet shampoo with a cucumber melon scent, in a 500ml bottle.',
+  'madre de cacao lavander.jpg': 'Prolific Tails Madre de Cacao shampoo for dogs and cats, with a lavender scent, in a 500ml pump bottle.',
+  'madre de cacao powder.jpg': 'Prolific Tails Madre de Cacao shampoo for dogs and cats, with a powder scent, in a pump bottle.',
+  'Pet Marra (Chicken and Liver).JPG': 'PetMarra chicken and liver dry food for adult dogs aged one year and above, in a 1kg bag.',
+  'Pet Marra (Ocean Fish and Chicken) pack.JPG': 'PetMarra ocean fish and chicken dry food for kittens up to 12 months old, in a 1kg bag.',
+  'Pet Marra (Ocean Fish and Chicken).jpg': 'PetMarra ocean fish and chicken dry food for adult cats aged one year and above, in a 7kg bag.',
+  'Pet Marra (Salmon and Vegetables).jpg': 'PetMarra salmon and vegetables canned meat loaf for adult dogs of all breeds.',
+  'Pet Marra (Tune and Vegetables).jpg': 'PetMarra duck and vegetables canned meat loaf for adult dogs of all breeds.',
+  'Vitastrip Cat Treats.jpg': 'Pet Box Vitastrip chicken and shrimp cat treats, with 12 individually packed 15g strips.',
+};

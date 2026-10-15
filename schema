@@ -1,0 +1,299 @@
+CREATE DATABASE IF NOT EXISTS petshop_db;
+USE petshop_db;
+
+CREATE TABLE IF NOT EXISTS users (
+  id INT(11) NOT NULL AUTO_INCREMENT,
+  role VARCHAR(50) NOT NULL DEFAULT 'User',
+  account_status ENUM('Active', 'Suspended') NOT NULL DEFAULT 'Active',
+  username VARCHAR(100) NULL,
+  surname VARCHAR(100) NULL,
+  first_name VARCHAR(100) NULL,
+  middle_initial VARCHAR(2) NULL,
+  phone_number VARCHAR(20) NULL,
+  email VARCHAR(150) NOT NULL,
+  email_verified_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  password VARCHAR(255) NOT NULL,
+  failed_attempts INT(11) DEFAULT 0,
+  lockout_time DATETIME DEFAULT NULL,
+  reset_token VARCHAR(255) DEFAULT NULL,
+  reset_expires DATETIME DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_users_username (username),
+  UNIQUE KEY uq_users_email (email)
+);
+
+CREATE TABLE IF NOT EXISTS pending_registrations (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  surname VARCHAR(100) NOT NULL,
+  first_name VARCHAR(100) NOT NULL,
+  middle_initial VARCHAR(2) DEFAULT NULL,
+  phone_number VARCHAR(20) NOT NULL,
+  email VARCHAR(150) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  otp_hash VARCHAR(255) NOT NULL,
+  otp_expires_at DATETIME NOT NULL,
+  last_sent_at DATETIME NOT NULL,
+  attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_pending_registrations_name (surname, first_name),
+  KEY idx_pending_registrations_email (email),
+  KEY idx_pending_registrations_expires (otp_expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS customers (
+  id INT(11) NOT NULL AUTO_INCREMENT,
+  customer_name VARCHAR(150) NOT NULL,
+  email VARCHAR(150) DEFAULT NULL,
+  phone VARCHAR(50) NOT NULL,
+  address TEXT DEFAULT NULL,
+  photo_path VARCHAR(255) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS pets (
+  id INT(11) NOT NULL AUTO_INCREMENT,
+  customer_id INT(11) NOT NULL,
+  pet_name VARCHAR(100) NOT NULL,
+  breed VARCHAR(100) DEFAULT NULL,
+  species VARCHAR(50) DEFAULT NULL,
+  photo_path VARCHAR(255) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  CONSTRAINT fk_pets_customer FOREIGN KEY (customer_id) REFERENCES customers(id)
+);
+
+CREATE TABLE IF NOT EXISTS products (
+    product_id INT AUTO_INCREMENT PRIMARY KEY,
+    sku VARCHAR(40) UNIQUE,
+    product_name VARCHAR(150) NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    product_group ENUM('Food', 'Shampoo', 'Other') NOT NULL DEFAULT 'Other',
+    price DECIMAL(10, 2) NOT NULL,
+    stock_quantity INT UNSIGNED NOT NULL DEFAULT 0,
+    reorder_level INT UNSIGNED NOT NULL DEFAULT 5,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    description TEXT,
+    image VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE grooming_services (
+    service_id INT AUTO_INCREMENT PRIMARY KEY,
+    service_name VARCHAR(100) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    status VARCHAR(20) DEFAULT 'Available'
+);
+
+
+CREATE TABLE haircut_styles (
+    style_id INT AUTO_INCREMENT PRIMARY KEY,
+    style_name VARCHAR(100) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    status VARCHAR(20) DEFAULT 'Available'
+);
+
+
+CREATE TABLE user_activity_logs (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    page_name VARCHAR(150) NOT NULL,
+    visited_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    action_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+TRUNCATE TABLE products;
+
+INSERT INTO products (category, product_name, description, price, image) VALUES
+('Dog Food', 'Beef Teriyaki', 'Tasty beef-flavored food for happy, active dogs.', 185.00, 'beefteriyaki.jpg'),
+('Dog Food', 'Denta Pro', 'Dental treats and care for oral hygiene.', 210.00, 'DENTA PRO.jpg'),
+('Dog Food', 'Special Dog', 'Complete and balanced nutrition for adult dogs.', 320.00, 'SPECAL DOG.jpg'),
+('Dog Food', 'ToeiDog', 'High-protein dry food for dogs.', 275.00, 'TOEIDOG.jpg'),
+('Dog Food', 'Top Breed Adult', 'Top quality dog meal for maintenance and energy.', 390.00, 'TOP BREED ADULT.jpg'),
+('Dog Food', 'Zoi Dog', 'Balanced meal formulation for growing dogs.', 295.00, 'ZOI DOG.jpg'),
+('Dog Food', 'Aozi', 'Premium organic dog food for all breeds.', 220.00, 'AOZI.jpg'),
+('Dog Food', 'Tasty Bites', 'Delicious snacks and treats for your dogs.', 220.00, '1.jpg');
+
+INSERT INTO products (category, product_name, description, price, image) VALUES
+('Cat Food', 'Cuties Catz', 'Crunchy and delicious cat food formulation.', 195.00, 'CUTIES CATZ.jpg'),
+('Cat Food', 'Funny U Pet Food', 'Nutritious meal option for your cats.', 175.00, 'FUNNY U PET FOOD.jpg'),
+('Cat Food', 'Holistic', 'Holistic recipe rich in vitamins and minerals for cats.', 260.00, 'HOLISTIC.jpg'),
+('Cat Food', 'Toeicat', 'Tasty formulation tailored for cats.', 285.00, 'TOEICAT.jpg'),
+('Cat Food', 'Zoi Cat', 'Nutritious dry cat food with essential taurine.', 250.00, 'ZOI CAT.jpg'),
+('Cat Food', 'Natural Goat Milk', 'Nutritional milk supplement for cats and pets.', 245.00, 'NATURAL GOAT MILK.jpg');
+
+
+
+
+
+USE petshop_db;
+
+-- 1. Styles & Packages Table (e.g., Shaved/Kalbo, Summer Cut, Bear Cut, etc.)
+CREATE TABLE IF NOT EXISTS grooming_styles (
+    style_id INT AUTO_INCREMENT PRIMARY KEY,
+    style_name VARCHAR(100) NOT NULL
+) ENGINE=InnoDB;
+
+-- 2. Size Pricing Table (Links styles with pet sizes and specific prices)
+CREATE TABLE IF NOT EXISTS style_size_pricing (
+    pricing_id INT AUTO_INCREMENT PRIMARY KEY,
+    style_id INT NOT NULL,
+    pet_size VARCHAR(50) NOT NULL, -- 'Small', 'Medium', 'Large', 'Extra Large', 'Giant'
+    price DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (style_id) REFERENCES grooming_styles(style_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 3. Add-ons Table (e.g., Basic Sanitary, Only Nails, etc.)
+CREATE TABLE IF NOT EXISTS grooming_addons (
+    addon_id INT AUTO_INCREMENT PRIMARY KEY,
+    addon_name VARCHAR(100) NOT NULL,
+    price DECIMAL(10,2) NOT NULL
+) ENGINE=InnoDB;
+
+-- ==========================================
+-- INSERT DATA DIRECTLY FROM THE PRICE LIST
+-- ==========================================
+
+-- Insert Styles
+INSERT INTO grooming_styles (style_id, style_name) VALUES 
+(1, 'Shaved / Kalbo'),
+(2, 'Summer Cut'),
+(3, 'Bear Cut'),
+(4, 'Puppy Cut'),
+(5, 'Asian Fusion');
+
+-- Insert Pricing Matrix (Style + Size + Price)
+INSERT INTO style_size_pricing (style_id, pet_size, price) VALUES
+-- Shaved / Kalbo
+(1, 'Small', 350), (1, 'Medium', 450), (1, 'Large', 550), (1, 'Extra Large', 750), (1, 'Giant', 850),
+-- Summer Cut
+(2, 'Small', 400), (2, 'Medium', 500), (2, 'Large', 600), (2, 'Extra Large', 800), (2, 'Giant', 900),
+-- Bear Cut
+(3, 'Small', 500), (3, 'Medium', 600), (3, 'Large', 800), (3, 'Extra Large', 900), (3, 'Giant', 1100),
+-- Puppy Cut
+(4, 'Small', 450), (4, 'Medium', 550), (4, 'Large', 750), (4, 'Extra Large', 850), (4, 'Giant', 1000),
+-- Asian Fusion
+(5, 'Small', 500), (5, 'Medium', 600), (5, 'Large', 800), (5, 'Extra Large', 900), (5, 'Giant', 1100);
+
+-- Insert Add-ons
+INSERT INTO grooming_addons (addon_name, price) VALUES
+('Basic Grooming', 250),
+('Basic Sanitary', 150),
+('Only Nails', 100),
+('Only Ears', 100),
+('Anal Sac', 100);
+
+
+
+USE petshop_db;
+
+CREATE TABLE IF NOT EXISTS groomers (
+    groomer_id INT AUTO_INCREMENT PRIMARY KEY,
+    groomer_name VARCHAR(100) NOT NULL UNIQUE,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS groomer_availability (
+    availability_id INT AUTO_INCREMENT PRIMARY KEY,
+    groomer_id INT NOT NULL,
+    day_of_week TINYINT UNSIGNED NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    UNIQUE KEY uq_groomer_day (groomer_id, day_of_week),
+    FOREIGN KEY (groomer_id) REFERENCES groomers(groomer_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS grooming_appointments (
+    appointment_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    reservation_code VARCHAR(24) NOT NULL UNIQUE,
+    customer_id INT NOT NULL,
+    pet_id INT NOT NULL,
+    grooming_style_id INT NOT NULL,
+    groomer_id INT NOT NULL,
+    booking_type ENUM('Salon', 'Home Service') NOT NULL DEFAULT 'Salon',
+    service_address TEXT,
+    pet_size VARCHAR(50) NOT NULL,
+    appointment_date DATE NOT NULL,
+    appointment_time TIME NOT NULL,
+    special_instructions TEXT,
+    total_price DECIMAL(10,2) NOT NULL,
+    status ENUM('Pending', 'Confirmed', 'Completed', 'Cancelled') NOT NULL DEFAULT 'Pending',
+    cancelled_at DATETIME,
+    active_slot TINYINT GENERATED ALWAYS AS (CASE WHEN status = 'Cancelled' THEN NULL ELSE 1 END) STORED,
+    confirmation_email_sent_at DATETIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_groomer_slot (groomer_id, appointment_date, appointment_time, active_slot),
+    FOREIGN KEY (customer_id) REFERENCES customers(id),
+    FOREIGN KEY (pet_id) REFERENCES pets(id),
+    FOREIGN KEY (grooming_style_id) REFERENCES grooming_styles(style_id),
+    FOREIGN KEY (groomer_id) REFERENCES groomers(groomer_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS appointment_addons (
+    appointment_id BIGINT UNSIGNED NOT NULL,
+    addon_id INT NOT NULL,
+    price_at_booking DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (appointment_id, addon_id),
+    FOREIGN KEY (appointment_id) REFERENCES grooming_appointments(appointment_id) ON DELETE CASCADE,
+    FOREIGN KEY (addon_id) REFERENCES grooming_addons(addon_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS product_reservations (
+    reservation_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    reservation_code VARCHAR(24) NOT NULL UNIQUE,
+    customer_id INT NOT NULL,
+    total_amount DECIMAL(10,2) NOT NULL,
+    status ENUM('Pending', 'Confirmed', 'Ready for Pickup', 'Claimed', 'Cancelled') NOT NULL DEFAULT 'Pending',
+    reserved_until DATETIME NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS product_reservation_items (
+    reservation_item_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    reservation_id BIGINT UNSIGNED NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT UNSIGNED NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (reservation_id) REFERENCES product_reservations(reservation_id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(product_id)
+) ENGINE=InnoDB;
+
+UPDATE products SET sku=CONCAT('LEGACY-', LPAD(product_id,4,'0')), stock_quantity=24, reorder_level=6 WHERE sku IS NULL;
+
+INSERT INTO products (sku, category, product_name, description, price, stock_quantity, reorder_level, image) VALUES
+('DOG-HYGIENE-001', 'Dog Hygiene', 'Gentle Dog Shampoo', 'Mild cleansing shampoo for regular baths.', 189.00, 18, 5, NULL),
+('DOG-HYGIENE-002', 'Dog Hygiene', 'Tick and Flea Soap', 'Everyday coat care for tick and flea protection.', 95.00, 20, 5, NULL),
+('DOG-ACCESSORY-001', 'Dog Accessories', 'Adjustable Dog Collar', 'Comfortable adjustable collar for daily walks.', 160.00, 16, 4, NULL),
+('DOG-ACCESSORY-002', 'Dog Accessories', 'Dog Leash', 'Durable leash with a secure metal clasp.', 220.00, 14, 4, NULL),
+('DOG-TOY-001', 'Dog Toys', 'Durable Chew Ball', 'Textured enrichment toy for active dogs.', 135.00, 18, 5, NULL),
+('DOG-CARE-001', 'Dog Care', 'Paw and Nose Balm', 'Moisturizing balm for dry paws and noses.', 175.00, 12, 4, NULL),
+('CAT-TREAT-001', 'Cat Treats', 'Creamy Cat Treats', 'Soft lickable treats for cats of all ages.', 120.00, 25, 6, NULL),
+('CAT-HYGIENE-001', 'Cat Hygiene', 'Clumping Cat Litter', 'Fast-clumping litter with reliable odor control.', 285.00, 22, 6, NULL),
+('CAT-HYGIENE-002', 'Cat Hygiene', 'Cat Grooming Wipes', 'Unscented wipes for quick coat and paw cleaning.', 150.00, 16, 4, NULL),
+('CAT-ACCESSORY-001', 'Cat Accessories', 'Breakaway Cat Collar', 'Lightweight safety collar with a bell.', 125.00, 18, 5, NULL),
+('CAT-ACCESSORY-002', 'Cat Accessories', 'Food and Water Bowl', 'Easy-clean feeding bowl for daily meals.', 180.00, 15, 4, NULL),
+('CAT-TOY-001', 'Cat Toys', 'Feather Wand', 'Interactive teaser toy for exercise and bonding.', 110.00, 20, 5, NULL),
+('CAT-CARE-001', 'Cat Care', 'Hairball Support Paste', 'Palatable supplement for routine hairball care.', 210.00, 12, 4, NULL)
+ON DUPLICATE KEY UPDATE product_name=VALUES(product_name), price=VALUES(price);
+
+UPDATE products
+SET product_group=CASE
+    WHEN product_name LIKE '%Shampoo%' THEN 'Shampoo'
+    WHEN category LIKE '%Food%' THEN 'Food'
+    ELSE 'Other'
+END;
+
+INSERT INTO products (sku, category, product_group, product_name, description, price, stock_quantity, reorder_level, image) VALUES
+('DOG-SHAMPOO-002', 'Dog Hygiene', 'Shampoo', 'Oatmeal Dog Shampoo', 'Soothing oatmeal shampoo for sensitive skin and regular baths.', 215.00, 16, 5, NULL),
+('CAT-SHAMPOO-001', 'Cat Hygiene', 'Shampoo', 'Waterless Cat Shampoo', 'No-rinse cleansing foam designed for gentle cat grooming.', 195.00, 14, 4, NULL)
+ON DUPLICATE KEY UPDATE product_name=VALUES(product_name), price=VALUES(price);

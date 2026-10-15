@@ -1,0 +1,20 @@
+.vercel
+.env*
+!.env.example
+
+# Local dependencies, sessions, uploads and generated audit artifacts
+/vendor/
+/.codex/
+**/.audit*/
+**/.audit*
+/public/uploads/
+*.log
+*.tsbuildinfo
+/petshop-next/*.png
+/petshop-next/*.pdf
+/petshop-next/*_RESULTS.json
+/petshop-next/*_AUDIT.json
+/petshop-next/*_AUDIT.pdf
+/petshop-next/*_FAILURE.html
+/petshop-next/INVENTORY_UI_CHECK/
+/petshop-next/CATALOG_IMPORT/

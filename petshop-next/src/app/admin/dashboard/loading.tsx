@@ -1,0 +1,1 @@
+export default function Loading(){return <section className="inventoryLoading" aria-busy="true" aria-label="Loading dashboard records"><p role="status">Loading current records…</p><div className="databaseCardGrid modernProductGrid">{Array.from({length:4},(_,i)=><div className="inventorySkeleton" key={i}><div/><span/><span/><span/></div>)}</div></section>;}

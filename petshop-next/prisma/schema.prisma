@@ -1,0 +1,405 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int                  @id @default(autoincrement())
+  role            String               @default("User") @db.VarChar(50)
+  accountStatus   String               @default("Active") @map("account_status")
+  username        String?              @unique @db.VarChar(100)
+  surname         String?              @db.VarChar(100)
+  firstName       String?              @map("first_name") @db.VarChar(100)
+  middleInitial   String?              @map("middle_initial") @db.VarChar(2)
+  phoneNumber     String?              @map("phone_number") @db.VarChar(20)
+  email           String               @unique @db.VarChar(150)
+  emailVerifiedAt DateTime             @default(now()) @map("email_verified_at")
+  password        String               @db.VarChar(255)
+  failedAttempts  Int?                 @default(0) @map("failed_attempts")
+  lockoutTime     DateTime?            @map("lockout_time")
+  resetToken      String?              @map("reset_token") @db.VarChar(255)
+  resetExpires    DateTime?            @map("reset_expires")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+  loyaltyChanges  LoyaltyTransaction[] @relation("LoyaltyChangedBy")
+  supportConversation SupportConversation? @relation("SupportCustomer")
+  supportMessages SupportMessage[]
+  groomingReviews GroomingReview[] @relation("ReviewAuthor")
+  moderatedReviews GroomingReview[] @relation("ReviewModerator")
+  googleIdentity GoogleIdentity?
+
+  @@map("users")
+}
+
+model GoogleIdentity {
+  googleSubject String @id @map("google_subject") @db.VarChar(255)
+  userId Int @unique @map("user_id")
+  createdAt DateTime @map("created_at") @db.DateTime(3)
+  user User @relation(fields:[userId],references:[id],onDelete:Restrict)
+  @@map("google_identities")
+}
+
+model RevokedSession {
+  sessionId String @id @map("session_id") @db.VarChar(64)
+  expiresAt DateTime @map("expires_at")
+  @@index([expiresAt])
+  @@map("revoked_sessions")
+}
+
+model Customer {
+  id                  Int                   @id @default(autoincrement())
+  customerName        String                @map("customer_name") @db.VarChar(150)
+  email               String?               @db.VarChar(150)
+  phone               String                @db.VarChar(50)
+  address             String?               @db.Text
+  photoPath           String?               @map("photo_path") @db.VarChar(255)
+  createdAt           DateTime              @default(now()) @map("created_at")
+  loyaltyStamps       Int                   @default(0) @map("loyalty_stamps")
+  rewardAvailable     Boolean               @default(false) @map("reward_available")
+  rewardRedeemedAt    DateTime?             @map("reward_redeemed_at")
+  pets                Pet[]
+  appointments        GroomingAppointment[]
+  productReservations ProductReservation[]
+  loyaltyTransactions LoyaltyTransaction[]
+  loyaltyProgram CustomerLoyaltyProgram?
+  supportConversations SupportConversation[]
+  reviews GroomingReview[]
+  checkouts ProductReservationCheckout[]
+
+  @@map("customers")
+}
+
+model SupportConversation {
+  conversationId Int @id @default(autoincrement()) @map("conversation_id")
+  customerUserId Int @unique @map("customer_user_id")
+  customerId Int? @map("customer_id")
+  createdAt DateTime @map("created_at") @db.DateTime(3)
+  updatedAt DateTime @map("updated_at") @db.DateTime(3)
+  account User @relation("SupportCustomer", fields: [customerUserId], references: [id], onDelete: Restrict)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  messages SupportMessage[]
+  @@index([updatedAt])
+  @@map("support_conversations")
+}
+
+model SupportMessage {
+  messageId BigInt @id @default(autoincrement()) @map("message_id")
+  conversationId Int @map("conversation_id")
+  senderId Int @map("sender_id")
+  senderRole String @map("sender_role") @db.VarChar(50)
+  content String @db.Text
+  requestKey String @map("request_key") @db.VarChar(32)
+  createdAt DateTime @map("created_at") @db.DateTime(3)
+  readAt DateTime? @map("read_at") @db.DateTime(3)
+  conversation SupportConversation @relation(fields: [conversationId], references: [conversationId], onDelete: Restrict)
+  sender User @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  @@unique([senderId, requestKey])
+  @@index([conversationId, messageId])
+  @@index([conversationId, senderRole, readAt])
+  @@index([senderId, createdAt])
+  @@map("support_messages")
+}
+
+model Pet {
+  id           Int                   @id @default(autoincrement())
+  customerId   Int                   @map("customer_id")
+  petName      String                @map("pet_name") @db.VarChar(100)
+  breed        String?               @db.VarChar(100)
+  ageDob       String?               @map("age_dob") @db.VarChar(100)
+  gender       String?               @db.VarChar(10)
+  species      String?               @db.VarChar(50)
+  photoPath    String?               @map("photo_path") @db.LongText
+  isActive     Int                   @default(1) @map("is_active") @db.TinyInt
+  createdAt    DateTime              @default(now()) @map("created_at")
+  customer     Customer              @relation(fields: [customerId], references: [id])
+  appointments GroomingAppointment[]
+
+  @@map("pets")
+}
+
+model Product {
+  productId        Int                      @id @default(autoincrement()) @map("product_id")
+  sku              String?                  @unique @db.VarChar(40)
+  productName      String                   @map("product_name") @db.VarChar(150)
+  category         String                   @db.VarChar(100)
+  productGroup     String                   @default("Other") @map("product_group")
+  price            Decimal                  @db.Decimal(10, 2)
+  stockQuantity    Int                      @default(0) @map("stock_quantity")
+  reorderLevel     Int                      @default(5) @map("reorder_level")
+  isActive         Int                      @default(1) @map("is_active") @db.TinyInt
+  description      String?                  @db.Text
+  image            String?                  @db.LongText
+  createdAt        DateTime                 @default(now()) @map("created_at")
+  reservationItems ProductReservationItem[]
+
+  @@map("products")
+}
+
+model GroomingStyle {
+  styleId      Int                   @id @default(autoincrement()) @map("style_id")
+  styleName    String                @map("style_name") @db.VarChar(100)
+  prices       StyleSizePricing[]
+  appointments GroomingAppointment[]
+
+  @@map("grooming_styles")
+}
+
+model StyleSizePricing {
+  pricingId Int           @id @default(autoincrement()) @map("pricing_id")
+  styleId   Int           @map("style_id")
+  petSize   String        @map("pet_size") @db.VarChar(50)
+  price     Decimal       @db.Decimal(10, 2)
+  style     GroomingStyle @relation(fields: [styleId], references: [styleId], onDelete: Cascade)
+
+  @@map("style_size_pricing")
+}
+
+model GroomingAddon {
+  addonId   Int     @id @default(autoincrement()) @map("addon_id")
+  addonName String  @map("addon_name") @db.VarChar(100)
+  price     Decimal @db.Decimal(10, 2)
+  appointments AppointmentAddon[]
+
+  @@map("grooming_addons")
+}
+
+model Groomer {
+  groomerId     Int                   @id @default(autoincrement()) @map("groomer_id")
+  groomerName   String                @unique @map("groomer_name") @db.VarChar(100)
+  isActive      Int                   @default(1) @map("is_active") @db.TinyInt
+  contactNumber String?               @map("contact_number") @db.VarChar(20)
+  profileImage  String?               @map("profile_image") @db.Text
+  createdAt     DateTime              @default(now()) @map("created_at")
+  appointments  GroomingAppointment[]
+  availability  GroomerAvailability[]
+
+  @@map("groomers")
+}
+
+model GroomerAvailability {
+  availabilityId Int      @id @default(autoincrement()) @map("availability_id")
+  groomerId      Int      @map("groomer_id")
+  dayOfWeek      Int      @map("day_of_week")
+  startTime      DateTime @map("start_time") @db.Time(0)
+  endTime        DateTime @map("end_time") @db.Time(0)
+  isActive       Boolean  @default(true) @map("is_active")
+  groomer        Groomer  @relation(fields: [groomerId], references: [groomerId], onDelete: Cascade)
+
+  @@unique([groomerId, dayOfWeek])
+  @@index([dayOfWeek, isActive])
+  @@map("groomer_availability")
+}
+
+model GroomingAppointment {
+  appointmentId           BigInt        @id @default(autoincrement()) @map("appointment_id")
+  reservationCode         String        @unique @map("reservation_code") @db.VarChar(24)
+  customerId              Int           @map("customer_id")
+  petId                   Int           @map("pet_id")
+  groomingStyleId         Int           @map("grooming_style_id")
+  groomerId               Int           @map("groomer_id")
+  bookingType             String        @default("Salon") @map("booking_type")
+  contactName             String?       @map("contact_name") @db.VarChar(150)
+  contactNumber           String?       @map("contact_number") @db.VarChar(20)
+  serviceAddress          String?       @map("service_address") @db.Text
+  petSize                 String        @map("pet_size") @db.VarChar(50)
+  appointmentDate         DateTime      @map("appointment_date") @db.Date
+  appointmentTime         DateTime      @map("appointment_time") @db.Time(0)
+  specialInstructions     String?       @map("special_instructions") @db.Text
+  totalPrice              Decimal       @map("total_price") @db.Decimal(10, 2)
+  status                  String        @default("Pending")
+  cancelledAt             DateTime?     @map("cancelled_at")
+  confirmationEmailSentAt DateTime?     @map("confirmation_email_sent_at")
+  reminderEmailSentAt     DateTime?     @map("reminder_email_sent_at")
+  createdAt               DateTime      @default(now()) @map("created_at")
+  updatedAt               DateTime      @default(now()) @updatedAt @map("updated_at")
+  customer                Customer      @relation(fields: [customerId], references: [id])
+  pet                     Pet           @relation(fields: [petId], references: [id])
+  style                   GroomingStyle @relation(fields: [groomingStyleId], references: [styleId])
+  groomer                 Groomer       @relation(fields: [groomerId], references: [groomerId])
+  addons                  AppointmentAddon[]
+  attendance              GroomingAttendance?
+  loyaltyPricing AppointmentLoyaltyPricing?
+  review GroomingReview?
+
+  @@index([appointmentDate, status])
+  @@index([groomerId, appointmentDate, appointmentTime])
+  @@map("grooming_appointments")
+}
+
+model GroomingReview {
+  reviewId BigInt @id @default(autoincrement()) @map("review_id")
+  userId Int @map("user_id")
+  customerId Int @map("customer_id")
+  appointmentId BigInt? @unique @map("appointment_id")
+  productReservationId BigInt? @unique @map("product_reservation_id")
+  rating Int @db.TinyInt
+  title String @default("") @db.VarChar(100)
+  message String @db.Text
+  status String @default("Pending") @db.VarChar(20)
+  moderationReason String? @map("moderation_reason") @db.VarChar(500)
+  moderatedBy Int? @map("moderated_by")
+  moderatedAt DateTime? @map("moderated_at") @db.DateTime(3)
+  createdAt DateTime @map("created_at") @db.DateTime(3)
+  updatedAt DateTime @map("updated_at") @db.DateTime(3)
+  version Int @default(1)
+  author User @relation("ReviewAuthor",fields:[userId],references:[id],onDelete:Restrict)
+  moderator User? @relation("ReviewModerator",fields:[moderatedBy],references:[id],onDelete:Restrict)
+  customer Customer @relation(fields:[customerId],references:[id],onDelete:Restrict)
+  appointment GroomingAppointment? @relation(fields:[appointmentId],references:[appointmentId],onDelete:Restrict)
+  productReservation ProductReservation? @relation(fields:[productReservationId],references:[reservationId],onDelete:Restrict)
+  @@index([status,createdAt],map:"reviews_public_idx")
+  @@index([userId,createdAt],map:"reviews_owner_idx")
+  @@map("grooming_reviews")
+}
+
+model GroomingAttendance {
+  appointmentId BigInt @id @map("appointment_id")
+  checkedInAt DateTime? @map("checked_in_at") @db.DateTime(3)
+  startedAt DateTime? @map("started_at") @db.DateTime(3)
+  cancellationReason String? @map("cancellation_reason") @db.Text
+  cancellationKind String? @map("cancellation_kind") @db.VarChar(20)
+  cancelledAt DateTime? @map("cancelled_at") @db.DateTime(3)
+  appointment GroomingAppointment @relation(fields:[appointmentId], references:[appointmentId], onDelete:Restrict)
+  @@map("grooming_attendance")
+}
+
+model CustomerLoyaltyProgram {
+  customerId Int @id @map("customer_id")
+  completedVisits Int @default(0) @map("completed_visits")
+  vipMember Boolean @default(false) @map("vip_member")
+  vipSince DateTime? @map("vip_since") @db.DateTime(3)
+  customer Customer @relation(fields:[customerId], references:[id], onDelete:Restrict)
+  @@map("customer_loyalty_program")
+}
+model AppointmentLoyaltyPricing {
+  appointmentId BigInt @id @map("appointment_id")
+  subtotal Decimal @db.Decimal(10,2)
+  estimatedPercent Int @default(0) @map("estimated_percent")
+  discountPercent Int @default(0) @map("discount_percent")
+  discountAmount Decimal @default(0) @map("discount_amount") @db.Decimal(10,2)
+  visitNumber Int? @map("visit_number")
+  appliedAt DateTime? @map("applied_at") @db.DateTime(3)
+  appointment GroomingAppointment @relation(fields:[appointmentId], references:[appointmentId], onDelete:Restrict)
+  @@map("appointment_loyalty_pricing")
+}
+
+model AppointmentAddon {
+  appointmentId BigInt @map("appointment_id")
+  addonId Int @map("addon_id")
+  priceAtBooking Decimal @map("price_at_booking") @db.Decimal(10, 2)
+  appointment GroomingAppointment @relation(fields: [appointmentId], references: [appointmentId], onDelete: Cascade)
+  addon GroomingAddon @relation(fields: [addonId], references: [addonId])
+  @@id([appointmentId, addonId])
+  @@map("appointment_addons")
+}
+
+model ProductReservation {
+  checkout ProductReservationCheckout?
+  review GroomingReview?
+  reservationId   BigInt                   @id @default(autoincrement()) @map("reservation_id")
+  reservationCode String                   @unique @map("reservation_code") @db.VarChar(24)
+  customerId      Int                      @map("customer_id")
+  customerName    String?                  @map("customer_name") @db.VarChar(150)
+  contactNumber   String?                  @map("contact_number") @db.VarChar(20)
+  deliveryAddress String?                  @map("delivery_address") @db.Text
+  totalAmount     Decimal                  @map("total_amount") @db.Decimal(10, 2)
+  status          String                   @default("Pending")
+  reservedUntil   DateTime                 @map("reserved_until")
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @default(now()) @updatedAt @map("updated_at")
+  customer        Customer                 @relation(fields: [customerId], references: [id])
+  items           ProductReservationItem[]
+
+  @@index([createdAt, status])
+  @@map("product_reservations")
+}
+
+model ProductReservationCheckout {
+  reservationId BigInt @id @map("reservation_id")
+  customerId Int @map("customer_id")
+  requestKey String @map("request_key") @db.VarChar(32)
+  requestFingerprint String @map("request_fingerprint") @db.VarChar(64)
+  paymentMethod String @map("payment_method") @db.VarChar(10)
+  reservation ProductReservation @relation(fields:[reservationId],references:[reservationId],onDelete:Restrict)
+  customer Customer @relation(fields:[customerId],references:[id],onDelete:Restrict)
+  @@unique([customerId,requestKey],map:"checkout_customer_request")
+  @@map("product_reservation_checkout")
+}
+
+model ProductReservationItem {
+  reservationItemId BigInt             @id @default(autoincrement()) @map("reservation_item_id")
+  reservationId     BigInt             @map("reservation_id")
+  productId         Int                @map("product_id")
+  quantity          Int
+  unitPrice         Decimal            @map("unit_price") @db.Decimal(10, 2)
+  reservation       ProductReservation @relation(fields: [reservationId], references: [reservationId], onDelete: Cascade)
+  product           Product            @relation(fields: [productId], references: [productId])
+
+  @@map("product_reservation_items")
+}
+
+model Notification {
+  notificationId BigInt    @id @default(autoincrement()) @map("notification_id")
+  recipientId    Int       @map("recipient_id")
+  eventKey       String    @map("event_key") @db.VarChar(120)
+  title          String    @db.VarChar(150)
+  message        String    @db.Text
+  type           String    @db.VarChar(50)
+  relatedType    String?   @map("related_type") @db.VarChar(50)
+  relatedId      String?   @map("related_id") @db.VarChar(50)
+  link           String    @db.VarChar(255)
+  isRead         Boolean   @default(false) @map("is_read")
+  readAt         DateTime? @map("read_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  recipient      User      @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@unique([recipientId, eventKey])
+  @@index([recipientId, isRead, createdAt])
+  @@map("notifications")
+}
+
+model AuditLog {
+  auditLogId  BigInt   @id @default(autoincrement()) @map("audit_log_id")
+  userId      Int?     @map("user_id")
+  userName    String   @map("user_name") @db.VarChar(150)
+  role        String   @db.VarChar(50)
+  action      String   @db.VarChar(80)
+  module      String   @db.VarChar(80)
+  recordId    String?  @map("record_id") @db.VarChar(80)
+  description String   @db.Text
+  ipAddress   String?  @map("ip_address") @db.VarChar(64)
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([userId, action, module])
+  @@map("audit_logs")
+}
+
+model LoyaltyTransaction {
+  transactionId BigInt   @id @default(autoincrement()) @map("transaction_id")
+  customerId    Int      @map("customer_id")
+  changedById   Int      @map("changed_by_id")
+  changeAmount  Int      @map("change_amount")
+  balanceAfter  Int      @map("balance_after")
+  reason        String   @db.VarChar(255)
+  createdAt     DateTime @default(now()) @map("created_at")
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  changedBy     User     @relation("LoyaltyChangedBy", fields: [changedById], references: [id])
+
+  @@index([customerId, createdAt])
+  @@map("loyalty_transactions")
+}
+
+model SystemSetting {
+  key       String   @id @db.VarChar(80)
+  value     String   @db.Text
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
